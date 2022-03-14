@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS department;
+DROP TABLE IF EXISTS role;
+
+CREATE TABLE departments (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE roles (
+    id INTEGER PRIMARY KEY,
+    title VARCHAR(30) NOT NULL,
+    salary DECIMAL NOT NULL
+)

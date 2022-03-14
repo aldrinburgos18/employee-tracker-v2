@@ -1,0 +1,27 @@
+{
+  "name": "employee-tracker-v2",
+  "version": "2.0.0",
+  "description": "A command-line application used to manage a company's employee database, using Node.js, Inquirer, and MySQL.",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run index.js",
+    "migrate": "sqlite3 db/employees.db < db/schema.sql",
+    "seed": "sqlite3 db/employees.db < db/seeds.sql",
+    "db": "sqlite3 db/employees.db"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aldrinburgos18/employee-tracker-v2.git"
+  },
+  "author": "Aldrin Burgos",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aldrinburgos18/employee-tracker-v2/issues"
+  },
+  "homepage": "https://github.com/aldrinburgos18/employee-tracker-v2#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^8.2.1",
+    "mysql2": "^2.3.3"
+  }
+}
