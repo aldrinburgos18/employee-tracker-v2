@@ -3,6 +3,10 @@ const con = require("../db/database");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
 
+let roles = [];
+let employees = [];
+let departments = [];
+
 function returnToMain() {
   inquirer
     .prompt({
@@ -53,6 +57,9 @@ function promptUser() {
           break;
         case "Add a role":
           addRole();
+          break;
+        case "Add an employee":
+          addEmployee();
           break;
       }
     });
@@ -115,41 +122,97 @@ function addDept() {
 }
 
 function addRole() {
-  let params = [];
-  con
-    .promise()
-    .query("SELECT * from departments")
-    .then(([rows, fields]) => {
-      rows.forEach((dept) => {
-        params.push({ id: dept.id, name: dept.name });
+  getDeptIds();
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "name",
+        message: "Enter a new role name: ",
+      },
+      {
+        type: "number",
+        name: "salary",
+        message: "Enter salary for role: ",
+      },
+      {
+        type: "list",
+        name: "dept",
+        message: "Which department does this role belong to?",
+        choices: departments,
+      },
+    ])
+    .then((data) => {
+      let dept = departments.find((d) => d.name === data.dept.toString()).id;
+      addToDB("role", data, dept);
+    });
+}
+
+function addEmployee() {
+  getEmployeeIds();
+  getRoleIds();
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "first_name",
+        message: "Enter employee's first name: ",
+      },
+      {
+        type: "input",
+        name: "last_name",
+        message: "Enter employee's last name: ",
+      },
+      {
+        type: "list",
+        name: "role",
+        message: "Select a role for this employee: ",
+        choices: roles,
+      },
+      {
+        type: "list",
+        name: "manager",
+        message: "Who is this employee's manager",
+        choices: employees,
+      },
+    ])
+    .then((data) => {
+      const roleId = roles.find((r) => r.name === data.role).id.toString();
+      const managerId = employees
+        .find((e) => e.name === data.manager)
+        .id.toString();
+      addToDB("employee", data, roleId, managerId);
+    });
+}
+
+function getEmployeeIds() {
+  con.query(
+    'SELECT e.id, concat(e.first_name, " ", e.last_name) AS name FROM employees e',
+    (err, results) => {
+      if (err) throw err;
+      results.forEach((e) => {
+        employees.push({ id: e.id, name: e.name });
       });
-    })
-    .then(() => {
-      inquirer
-        .prompt([
-          {
-            type: "input",
-            name: "name",
-            message: "Enter a new role name: ",
-          },
-          {
-            type: "number",
-            name: "salary",
-            message: "Enter salary for role: ",
-          },
-          {
-            type: "list",
-            name: "dept",
-            message: "Which department does this role belong to?",
-            choices: params,
-          },
-        ])
-        .then((data) => {
-          let dept = params.find((d) => d.name === data.dept.toString()).id;
-          addToDB("role", data, dept);
-        });
-    })
-    .catch(console.log);
+    }
+  );
+}
+
+function getRoleIds() {
+  con.query(`SELECT id, title AS name from roles`, (err, results) => {
+    if (err) throw err;
+    results.forEach((r) => {
+      roles.push({ id: r.id, name: r.name });
+    });
+  });
+}
+
+function getDeptIds() {
+  con.query(`SELECT id, name from departments`, (err, results) => {
+    if (err) throw err;
+    results.forEach((d) => {
+      departments.push({ id: d.id, name: d.name });
+    });
+  });
 }
 
 function addToDB() {
@@ -163,6 +226,16 @@ function addToDB() {
     sql = `INSERT INTO roles(title, salary, dept_id)
            VALUES (?, ?, ?)`;
     params = [arguments[1].name, arguments[1].salary, arguments[2]];
+  }
+  if (arguments[0] === "employee") {
+    sql = `INSERT INTO employees(first_name, last_name, role_id, manager_id)
+           VALUES(?, ?, ?, ?)`;
+    params = [
+      arguments[1].first_name,
+      arguments[1].last_name,
+      arguments[2],
+      arguments[3],
+    ];
   }
   con.execute(sql, params, (err, result) => {
     if (err) throw err;
