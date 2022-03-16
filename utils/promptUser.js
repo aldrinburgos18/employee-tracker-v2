@@ -26,6 +26,9 @@ function returnToMain() {
 }
 
 function promptUser() {
+  getEmployeeIds();
+  getRoleIds();
+  getDeptIds();
   inquirer
     .prompt({
       type: "list",
@@ -60,6 +63,9 @@ function promptUser() {
           break;
         case "Add an employee":
           addEmployee();
+          break;
+        case "Update an employee role":
+          updateEmployeeRole();
           break;
       }
     });
@@ -122,7 +128,6 @@ function addDept() {
 }
 
 function addRole() {
-  getDeptIds();
   inquirer
     .prompt([
       {
@@ -141,16 +146,25 @@ function addRole() {
         message: "Which department does this role belong to?",
         choices: departments,
       },
+      {
+        type: "confirm",
+        name: "confirm",
+        message: (answers) =>
+          `Is this information correct?
+          \nRole name: "${answers.name}"\nSalary: "${answers.salary}"\nDepartment: "${answers.dept}" \n\n`,
+      },
     ])
     .then((data) => {
-      let dept = departments.find((d) => d.name === data.dept.toString()).id;
-      addToDB("role", data, dept);
+      if (data.confirm) {
+        let dept = departments.find((d) => d.name === data.dept.toString()).id;
+        addToDB("role", data, dept);
+      } else {
+        addRole();
+      }
     });
 }
 
 function addEmployee() {
-  getEmployeeIds();
-  getRoleIds();
   inquirer
     .prompt([
       {
@@ -175,13 +189,71 @@ function addEmployee() {
         message: "Who is this employee's manager",
         choices: employees,
       },
+      {
+        type: "confirm",
+        name: "confirm",
+        message: (answers) =>
+          `Is this information correct?
+          \nFirst name: "${answers.first_name}"\nLast Name: "${answers.last_name}"\nRole: "${answers.role}"\nManager: "${answers.manager}" \n\n`,
+      },
     ])
     .then((data) => {
-      const roleId = roles.find((r) => r.name === data.role).id.toString();
-      const managerId = employees
-        .find((e) => e.name === data.manager)
-        .id.toString();
-      addToDB("employee", data, roleId, managerId);
+      if (data.confirm) {
+        const roleId = roles.find((r) => r.name === data.role).id.toString();
+        const managerId = employees
+          .find((e) => e.name === data.manager)
+          .id.toString();
+        addToDB("employee", data, roleId, managerId);
+      } else {
+        addEmployee();
+      }
+    });
+}
+
+function updateEmployeeRole() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "employee",
+        message: "Which employee would you like to update?",
+        choices: employees,
+      },
+      {
+        type: "list",
+        name: "role",
+        message: "Select a new role for this employee: ",
+        choices: roles,
+      },
+      {
+        type: "confirm",
+        name: "confirm",
+        message: (answers) =>
+          `Is this information correct?
+        \nEmployee: "${answers.employee}"\nNew Role: "${answers.role}" \n\n`,
+      },
+    ])
+    .then((data) => {
+      if (data.confirm) {
+        const roleId = roles.find((r) => r.name === data.role).id.toString();
+        const employeeId = employees
+          .find((e) => e.name === data.employee)
+          .id.toString();
+
+        const sql = `UPDATE employees
+                   SET role_id = ?
+                   WHERE id = ?`;
+        const params = [roleId, employeeId];
+        con.execute(sql, params, function (err, result) {
+          if (err) throw err;
+          console.log(
+            `${data.employee}'s role successfully updated to ${data.role}`
+          );
+          returnToMain();
+        });
+      } else {
+        updateEmployeeRole();
+      }
     });
 }
 
