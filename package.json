@@ -4,7 +4,7 @@
   "description": "A command-line application used to manage a company's employee database, using Node.js, Inquirer, and MySQL.",
   "main": "index.js",
   "scripts": {
-    "start": "npm run index.js",
+    "start": "node index.js",
     "migrate": "sqlite3 db/employees.db < db/schema.sql",
     "seed": "sqlite3 db/employees.db < db/seeds.sql",
     "db": "sqlite3 db/employees.db"
