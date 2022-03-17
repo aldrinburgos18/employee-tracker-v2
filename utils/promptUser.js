@@ -123,8 +123,7 @@ function viewEmpByMgr() {
                    FROM employees e
                    LEFT JOIN employees m on e.manager_id = m.id
                    WHERE e.manager_id = ?`;
-      const params = [manager];
-      con.query(sql, params, (err, rows) => {
+      con.query(sql, manager, (err, rows) => {
         if (err) throw err;
         if (rows.length) {
           console.table(rows);
@@ -147,6 +146,54 @@ function returnToViewEmpByMgr() {
     .then((data) => {
       if (data.return) {
         viewEmpByMgr();
+      } else {
+        promptUser();
+      }
+    });
+}
+
+function viewEmpByDept() {
+  inquirer
+    .prompt({
+      type: "list",
+      name: "dept",
+      message: "Select a department: ",
+      choices: departments,
+    })
+    .then((data) => {
+      const deptId = departments
+        .find((d) => d.name === data.dept)
+        .id.toString();
+      const sql = `SELECT concat(e.first_name, " ", e.last_name) AS Employee, e.id, r.title AS "Job Title", d.name AS "Department Name"
+                   FROM employees e
+                   LEFT JOIN roles r on e.role_id = r.id
+                   LEFT JOIN departments d on r.dept_id = d.id
+                   WHERE d.id = ?`;
+      con.query(sql, deptId, (err, rows) => {
+        if (err) throw err;
+        if (rows.length) {
+          console.log(
+            `\n${rows.length} employees found in ${data.dept} Department\n`
+          );
+          console.table(rows);
+        } else {
+          console.log(`\nNo employees found.\n`);
+        }
+        returnToViewEmpByDept();
+      });
+    });
+}
+
+function returnToViewEmpByDept() {
+  inquirer
+    .prompt({
+      type: "confirm",
+      name: "return",
+      message: "Would you like to select another department?",
+    })
+    .then((data) => {
+      if (data.return) {
+        viewEmpByDept();
       } else {
         promptUser();
       }
