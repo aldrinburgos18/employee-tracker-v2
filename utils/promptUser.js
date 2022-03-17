@@ -44,6 +44,7 @@ function promptUser() {
         "Update an employee's role",
         "Update an employee's manager",
         "View employees by manager",
+        "View employees by department",
       ],
     })
     .then((answers) => {
@@ -75,6 +76,9 @@ function promptUser() {
         case "View employees by manager":
           viewEmpByMgr();
           break;
+        case "View employees by department":
+          viewEmpByDept();
+          break;
       }
     });
 }
@@ -101,6 +105,52 @@ function viewAll(option) {
     console.table(results);
     returnToMain();
   });
+}
+
+function viewEmpByMgr() {
+  inquirer
+    .prompt({
+      type: "list",
+      name: "manager",
+      message: "Select a manager: ",
+      choices: employees,
+    })
+    .then((data) => {
+      const manager = employees
+        .find((m) => m.name === data.manager)
+        .id.toString();
+      const sql = `SELECT concat(e.first_name, " ", e.last_name) AS "Employees managed by ${data.manager}", e.id
+                   FROM employees e
+                   LEFT JOIN employees m on e.manager_id = m.id
+                   WHERE e.manager_id = ?`;
+      const params = [manager];
+      con.query(sql, params, (err, rows) => {
+        if (err) throw err;
+        if (rows.length) {
+          console.table(rows);
+        } else {
+          console.log(`\nNo employees found.\n`);
+        }
+
+        returnToViewEmpByMgr();
+      });
+    });
+}
+
+function returnToViewEmpByMgr() {
+  inquirer
+    .prompt({
+      type: "confirm",
+      name: "return",
+      message: "Would you like to select another manager?",
+    })
+    .then((data) => {
+      if (data.return) {
+        viewEmpByMgr();
+      } else {
+        promptUser();
+      }
+    });
 }
 
 function addDept() {
