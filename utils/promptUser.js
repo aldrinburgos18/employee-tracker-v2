@@ -41,7 +41,9 @@ function promptUser() {
         "Add a department",
         "Add a role",
         "Add an employee",
-        "Update an employee role",
+        "Update an employee's role",
+        "Update an employee's manager",
+        "View employees by manager",
       ],
     })
     .then((answers) => {
@@ -64,8 +66,14 @@ function promptUser() {
         case "Add an employee":
           addEmployee();
           break;
-        case "Update an employee role":
+        case "Update an employee's role":
           updateEmployeeRole();
+          break;
+        case "Update an employee's manager":
+          updateEmployeeManager();
+          break;
+        case "View employees by manager":
+          viewEmpByMgr();
           break;
       }
     });
@@ -247,12 +255,59 @@ function updateEmployeeRole() {
         con.execute(sql, params, function (err, result) {
           if (err) throw err;
           console.log(
-            `${data.employee}'s role successfully updated to ${data.role}`
+            `${data.employee}'s role successfully updated to ${data.role}!`
           );
           returnToMain();
         });
       } else {
         updateEmployeeRole();
+      }
+    });
+}
+
+function updateEmployeeManager() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "employee",
+        message: "Which employee would you like to update?",
+        choices: employees,
+      },
+      {
+        type: "list",
+        name: "manager",
+        message: "Select a new manager for this employee: ",
+        choices: employees,
+      },
+      {
+        type: "confirm",
+        name: "confirm",
+        message: (answers) =>
+          `Is this information correct?
+      \nEmployee: "${answers.employee}"\nNew Manager: "${answers.manager}" \n\n`,
+      },
+    ])
+    .then((data) => {
+      if (data.confirm) {
+        const managerId = employees
+          .find((m) => m.name === data.manager)
+          .id.toString();
+        const employeeId = employees
+          .find((e) => e.name === data.employee)
+          .id.toString();
+
+        const sql = `UPDATE employees
+                    SET manager_id = ?
+                    WHERE id = ?`;
+        const params = [managerId, employeeId];
+        con.execute(sql, params, function (err, result) {
+          if (err) throw err;
+          console.log(
+            `${data.employee}'s manager successfully updated to ${data.manager}!`
+          );
+          returnToMain();
+        });
       }
     });
 }
