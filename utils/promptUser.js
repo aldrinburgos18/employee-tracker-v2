@@ -46,6 +46,7 @@ function promptUser() {
         "View employees by manager",
         "View employees by department",
         "Delete a department",
+        "Delete a role",
       ],
     })
     .then((answers) => {
@@ -82,6 +83,9 @@ function promptUser() {
           break;
         case "Delete a department":
           deleteDept();
+          break;
+        case "Delete a role":
+          deleteRole();
           break;
       }
     });
@@ -429,6 +433,20 @@ function deleteDept() {
     });
 }
 
+function deleteRole() {
+  inquirer
+    .prompt({
+      type: "list",
+      name: "role",
+      message: "Which role would you like to delete?",
+      choices: roles,
+    })
+    .then((data) => {
+      const roleId = [roles.find((r) => r.name === data.role).id.toString()];
+      deleteFromDB("role", roleId);
+    });
+}
+
 function getEmployeeIds() {
   employees = [];
   con.query(
@@ -466,6 +484,12 @@ function deleteFromDB(option, id) {
   let sql;
   if (option === "dept") {
     sql = `DELETE FROM departments WHERE id = ?`;
+  }
+  if (option === "role") {
+    sql = `DELETE FROM roles WHERE id = ?`;
+  }
+  if (option === "employee") {
+    sql = `DELETE FROM employees WHERE id = ?`;
   }
   con.execute(sql, id, (err, result) => {
     if (err) throw err;
