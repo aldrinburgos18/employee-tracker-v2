@@ -45,6 +45,7 @@ function promptUser() {
         "Update an employee's manager",
         "View employees by manager",
         "View employees by department",
+        "Delete a department",
       ],
     })
     .then((answers) => {
@@ -78,6 +79,9 @@ function promptUser() {
           break;
         case "View employees by department":
           viewEmpByDept();
+          break;
+        case "Delete a department":
+          deleteDept();
           break;
       }
     });
@@ -409,7 +413,24 @@ function updateEmployeeManager() {
     });
 }
 
+function deleteDept() {
+  inquirer
+    .prompt({
+      type: "list",
+      name: "dept",
+      message: "Which department would you like to delete?",
+      choices: departments,
+    })
+    .then((data) => {
+      const deptId = [
+        departments.find((d) => d.name === data.dept).id.toString(),
+      ];
+      deleteFromDB("dept", deptId);
+    });
+}
+
 function getEmployeeIds() {
+  employees = [];
   con.query(
     'SELECT e.id, concat(e.first_name, " ", e.last_name) AS name FROM employees e',
     (err, results) => {
@@ -422,6 +443,7 @@ function getEmployeeIds() {
 }
 
 function getRoleIds() {
+  roles = [];
   con.query(`SELECT id, title AS name from roles`, (err, results) => {
     if (err) throw err;
     results.forEach((r) => {
@@ -431,11 +453,24 @@ function getRoleIds() {
 }
 
 function getDeptIds() {
+  departments = [];
   con.query(`SELECT id, name from departments`, (err, results) => {
     if (err) throw err;
     results.forEach((d) => {
       departments.push({ id: d.id, name: d.name });
     });
+  });
+}
+
+function deleteFromDB(option, id) {
+  let sql;
+  if (option === "dept") {
+    sql = `DELETE FROM departments WHERE id = ?`;
+  }
+  con.execute(sql, id, (err, result) => {
+    if (err) throw err;
+    console.log(`Successfully deleted from the database.`);
+    returnToMain();
   });
 }
 
