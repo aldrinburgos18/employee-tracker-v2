@@ -47,6 +47,7 @@ function promptUser() {
         "View employees by department",
         "Delete a department",
         "Delete a role",
+        "Remove an employee",
       ],
     })
     .then((answers) => {
@@ -86,6 +87,9 @@ function promptUser() {
           break;
         case "Delete a role":
           deleteRole();
+          break;
+        case "Remove an employee":
+          deleteEmployee();
           break;
       }
     });
@@ -444,6 +448,22 @@ function deleteRole() {
     .then((data) => {
       const roleId = [roles.find((r) => r.name === data.role).id.toString()];
       deleteFromDB("role", roleId);
+    });
+}
+
+function deleteEmployee() {
+  inquirer
+    .prompt({
+      type: "list",
+      name: "employee",
+      message: "Which employee would you like to delete?",
+      choices: employees,
+    })
+    .then((data) => {
+      const employeeId = [
+        employees.find((e) => e.name === data.employee).id.toString(),
+      ];
+      deleteFromDB("employee", employeeId);
     });
 }
 
