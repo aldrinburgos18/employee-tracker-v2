@@ -3,6 +3,9 @@ const con = require("../db/database");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
 
+const { validateText, validateNum } = require("./validateInput");
+const { addToDB, deleteFromDB, updateDB } = require("./databaseActions");
+
 let roles = [];
 let employees = [];
 let departments = [];
@@ -237,6 +240,8 @@ function addDept() {
       if (data.confirmName) {
         //add to database
         addToDB("dept", data);
+        console.log("Successfully added to the database.");
+        returnToMain();
       } else {
         //call function again
         addDept();
@@ -251,11 +256,13 @@ function addRole() {
         type: "input",
         name: "name",
         message: "Enter a new role name: ",
+        validate: (nameInput) => validateText(nameInput),
       },
       {
         type: "number",
         name: "salary",
         message: "Enter salary for role: ",
+        validate: (salaryInput) => validateNum(nameInput),
       },
       {
         type: "list",
@@ -275,6 +282,8 @@ function addRole() {
       if (data.confirm) {
         let dept = departments.find((d) => d.name === data.dept.toString()).id;
         addToDB("role", data, dept);
+        console.log("Successfully added to the database.");
+        returnToMain();
       } else {
         addRole();
       }
@@ -288,11 +297,13 @@ function addEmployee() {
         type: "input",
         name: "first_name",
         message: "Enter employee's first name: ",
+        validate: (firstNameInput) => validateText(firstNameInput),
       },
       {
         type: "input",
         name: "last_name",
         message: "Enter employee's last name: ",
+        validate: (lastNameInput) => validateText(lastNameInput),
       },
       {
         type: "list",
@@ -321,6 +332,8 @@ function addEmployee() {
           .find((e) => e.name === data.manager)
           .id.toString();
         addToDB("employee", data, roleId, managerId);
+        console.log("Successfully added to the database.");
+        returnToMain();
       } else {
         addEmployee();
       }
@@ -356,18 +369,11 @@ function updateEmployeeRole() {
         const employeeId = employees
           .find((e) => e.name === data.employee)
           .id.toString();
-
-        const sql = `UPDATE employees
-                   SET role_id = ?
-                   WHERE id = ?`;
-        const params = [roleId, employeeId];
-        con.execute(sql, params, function (err, result) {
-          if (err) throw err;
-          console.log(
-            `${data.employee}'s role successfully updated to ${data.role}!`
-          );
-          returnToMain();
-        });
+        updateDB("employee", roleId, employeeId);
+        console.log(
+          `${data.employee}'s role successfully updated to ${data.role}!`
+        );
+        returnToMain();
       } else {
         updateEmployeeRole();
       }
@@ -405,18 +411,11 @@ function updateEmployeeManager() {
         const employeeId = employees
           .find((e) => e.name === data.employee)
           .id.toString();
-
-        const sql = `UPDATE employees
-                    SET manager_id = ?
-                    WHERE id = ?`;
-        const params = [managerId, employeeId];
-        con.execute(sql, params, function (err, result) {
-          if (err) throw err;
-          console.log(
-            `${data.employee}'s manager successfully updated to ${data.manager}!`
-          );
-          returnToMain();
-        });
+        updateDB("empManager", managerId, employeeId);
+        console.log(
+          `${data.employee}'s manager successfully updated to ${data.manager}!`
+        );
+        returnToMain();
       }
     });
 }
@@ -434,6 +433,8 @@ function deleteDept() {
         departments.find((d) => d.name === data.dept).id.toString(),
       ];
       deleteFromDB("dept", deptId);
+      console.log(`Successfully deleted from the database.`);
+      returnToMain();
     });
 }
 
@@ -448,6 +449,8 @@ function deleteRole() {
     .then((data) => {
       const roleId = [roles.find((r) => r.name === data.role).id.toString()];
       deleteFromDB("role", roleId);
+      console.log(`Successfully deleted from the database.`);
+      returnToMain();
     });
 }
 
@@ -464,6 +467,8 @@ function deleteEmployee() {
         employees.find((e) => e.name === data.employee).id.toString(),
       ];
       deleteFromDB("employee", employeeId);
+      console.log(`Successfully deleted from the database.`);
+      returnToMain();
     });
 }
 
@@ -497,53 +502,6 @@ function getDeptIds() {
     results.forEach((d) => {
       departments.push({ id: d.id, name: d.name });
     });
-  });
-}
-
-function deleteFromDB(option, id) {
-  let sql;
-  if (option === "dept") {
-    sql = `DELETE FROM departments WHERE id = ?`;
-  }
-  if (option === "role") {
-    sql = `DELETE FROM roles WHERE id = ?`;
-  }
-  if (option === "employee") {
-    sql = `DELETE FROM employees WHERE id = ?`;
-  }
-  con.execute(sql, id, (err, result) => {
-    if (err) throw err;
-    console.log(`Successfully deleted from the database.`);
-    returnToMain();
-  });
-}
-
-function addToDB() {
-  let sql, params;
-  if (arguments[0] === "dept") {
-    sql = `INSERT INTO departments(name)
-    VALUES (?)`;
-    params = [arguments[1].name];
-  }
-  if (arguments[0] === "role") {
-    sql = `INSERT INTO roles(title, salary, dept_id)
-           VALUES (?, ?, ?)`;
-    params = [arguments[1].name, arguments[1].salary, arguments[2]];
-  }
-  if (arguments[0] === "employee") {
-    sql = `INSERT INTO employees(first_name, last_name, role_id, manager_id)
-           VALUES(?, ?, ?, ?)`;
-    params = [
-      arguments[1].first_name,
-      arguments[1].last_name,
-      arguments[2],
-      arguments[3],
-    ];
-  }
-  con.execute(sql, params, (err, result) => {
-    if (err) throw err;
-    console.log("Successfully added to the database.");
-    returnToMain();
   });
 }
 
