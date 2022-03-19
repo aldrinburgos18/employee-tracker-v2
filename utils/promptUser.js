@@ -22,8 +22,7 @@ function returnToMain() {
       if (selection.return) {
         promptUser();
       } else {
-        //logic for exiting
-        console.log("Connection to the database ended. Good bye!");
+        exit();
       }
     });
 }
@@ -52,6 +51,7 @@ function promptUser() {
         "Delete a department",
         "Delete a role",
         "Remove an employee",
+        "Exit",
       ],
     })
     .then((answers) => {
@@ -148,6 +148,8 @@ function promptUser() {
             promptUser();
           }
           break;
+        default:
+          exit();
       }
     });
 }
@@ -579,6 +581,10 @@ function getDeptIds() {
       departments.push({ id: d.id, name: d.name });
     });
   });
+}
+
+function exit() {
+  process.exit();
 }
 
 module.exports = promptUser;
