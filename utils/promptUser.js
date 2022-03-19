@@ -29,9 +29,10 @@ function returnToMain() {
 }
 
 function promptUser() {
+  getDeptIds();
   getEmployeeIds();
   getRoleIds();
-  getDeptIds();
+
   inquirer
     .prompt({
       type: "list",
@@ -68,31 +69,84 @@ function promptUser() {
           addDept();
           break;
         case "Add a role":
-          addRole();
+          if (departments.length) {
+            addRole();
+          } else {
+            console.log(
+              "\x1b[31m",
+              `No departments found, please create a department before creating a role.`,
+              "\x1b[0m"
+            );
+            addDept();
+          }
           break;
         case "Add an employee":
-          addEmployee();
+          if (roles.length) {
+            addEmployee();
+          } else {
+            console.log(
+              "\x1b[31m",
+              `No roles found, please create a role before creating an employee.`,
+              "\x1b[0m"
+            );
+            addRole();
+          }
           break;
         case "Update an employee's role":
-          updateEmployeeRole();
+          if (employees.length) {
+            updateEmployeeRole();
+          } else {
+            console.log("\x1b[31m", `No employees found.`, "\x1b[0m");
+            promptUser();
+          }
           break;
         case "Update an employee's manager":
-          updateEmployeeManager();
+          if (employees.length) {
+            updateEmployeeManager();
+          } else {
+            console.log("\x1b[31m", `No employees found.`, "\x1b[0m");
+            promptUser();
+          }
           break;
         case "View employees by manager":
-          viewEmpByMgr();
+          if (employees.length) {
+            viewEmpByMgr();
+          } else {
+            console.log("\x1b[31m", `No employees found.`, "\x1b[0m");
+            promptUser();
+          }
           break;
         case "View employees by department":
-          viewEmpByDept();
+          if (employees.length) {
+            viewEmpByDept();
+          } else {
+            console.log("\x1b[31m", `No employees found.`, "\x1b[0m");
+            promptUser();
+          }
           break;
         case "Delete a department":
-          deleteDept();
+          if (departments.length) {
+            deleteDept();
+          } else {
+            console.log("\x1b[31m", `No departments found.`, "\x1b[0m");
+            promptUser();
+          }
           break;
         case "Delete a role":
-          deleteRole();
+          if (roles.length) {
+            deleteRole();
+          } else {
+            console.log("\x1b[31m", `No roles found.`, "\x1b[0m");
+            promptUser();
+          }
           break;
         case "Remove an employee":
-          deleteEmployee();
+          if (employees.length) {
+            deleteEmployee();
+          } else {
+            console.log("\x1b[31m", `No employees found.`, "\x1b[0m");
+            promptUser();
+          }
           break;
       }
     });
@@ -117,7 +171,7 @@ function viewAll(option) {
   con.query(sql, function (err, results) {
     if (err) throw err;
     console.log(`\n${results.length} results found in database.\n`);
-    console.table(results);
+    if (results) console.table(results);
     returnToMain();
   });
 }
@@ -222,18 +276,12 @@ function addDept() {
         type: "input",
         name: "name",
         message: "Enter new department's name: ",
+        validate: (nameInput) => validateText(nameInput),
       },
       {
         type: "confirm",
         name: "confirmName",
         message: (answers) => `Is "${answers.name}" correct?`,
-        when: ({ name }) => {
-          if (name) {
-            return true;
-          } else {
-            return false;
-          }
-        },
       },
     ])
     .then((data) => {
@@ -259,10 +307,10 @@ function addRole() {
         validate: (nameInput) => validateText(nameInput),
       },
       {
-        type: "number",
+        type: "input",
         name: "salary",
         message: "Enter salary for role: ",
-        validate: (salaryInput) => validateNum(nameInput),
+        validate: (salaryInput) => validateNum(salaryInput),
       },
       {
         type: "list",
@@ -312,25 +360,53 @@ function addEmployee() {
         choices: roles,
       },
       {
+        type: "confirm",
+        name: "confirmManager",
+        message: "Would you like to add a manager for this employee?",
+        when: () => {
+          if (employees.length) {
+            return true;
+          } else {
+            return false;
+          }
+        },
+      },
+      {
         type: "list",
         name: "manager",
         message: "Who is this employee's manager",
         choices: employees,
+        when: (answers) => {
+          if (employees.length && answers.confirmManager) {
+            return true;
+          } else {
+            return false;
+          }
+        },
       },
       {
         type: "confirm",
         name: "confirm",
         message: (answers) =>
           `Is this information correct?
-          \nFirst name: "${answers.first_name}"\nLast Name: "${answers.last_name}"\nRole: "${answers.role}"\nManager: "${answers.manager}" \n\n`,
+          \nFirst name: "${answers.first_name}"\nLast Name: "${
+            answers.last_name
+          }"\nRole: "${answers.role}"\nManager: "${
+            answers.manager || "None"
+          }" \n\n`,
       },
     ])
     .then((data) => {
+      let managerId;
       if (data.confirm) {
         const roleId = roles.find((r) => r.name === data.role).id.toString();
-        const managerId = employees
-          .find((e) => e.name === data.manager)
-          .id.toString();
+        if (!employees.length || data.manager === "None") {
+          managerId = null;
+        } else {
+          managerId = employees
+            .find((e) => e.name === data.manager)
+            .id.toString();
+        }
         addToDB("employee", data, roleId, managerId);
         console.log("Successfully added to the database.");
         returnToMain();
