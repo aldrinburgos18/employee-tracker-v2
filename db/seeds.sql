@@ -1,3 +1,5 @@
+SET FOREIGN_KEY_CHECKS=0;
+
 INSERT INTO departments(name)
     VALUES
     ('Sales'),
@@ -27,5 +29,7 @@ INSERT INTO employees (first_name, last_name, role_id, manager_id)
     ('Sarah', 'Lourd', 8, null),
     ('Tom', 'Allen', 9, 7),
     ('Aldrin', 'Burgos', 3, 6),
-    ('Pia', 'Burgos', 4, 8),
+    ('Pia', 'Burgos', 6, 8),
     ('Pio', 'Madrigal', 1, 3);
+
+SET FOREIGN_KEY_CHECKS=1;
